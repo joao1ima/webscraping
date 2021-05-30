@@ -2,29 +2,49 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const mysql = require('mysql');
 const pool = mysql.createPool({
-    connectionLimit: 10,
+    connectionLimit: 15,
     host: 'localhost',
     user:'root',
     database: 'blog'
 
 });
 
-function saveAll(unitData){
+function queryAll(unitData){
     let content = {
         title: unitData.articleTitle,
         lead: unitData.artileLead,
         date: unitData.articleDate
     }
+    // novo pool vai aqui
 
     pool.getConnection( function(err, connection){
         if(err) throw err;
-        connection.query('INSERT INTO noticias set ?', content, function(err, result, fields){
-            console.log(content);
-            connection.release();
+        connection.query('SELECT * FROM `noticias` WHERE `title` = ?', content.title, function(err, result, fields){
+            let resultsLength = result.length;
+            if (resultsLength === 0){
+                salveAll(content);
+                console.log('Cadastrando ... Aguarde!');
+            } else{
+                console.log ('Título(s) já cadastrado(s)');
+            }
             if(err) throw err;
         })
     })
 }
+
+
+function salveAll(contentAll){
+    pool.getConnection( function(err, connection){
+        if(err) throw err;
+        connection.query('INSERT INTO noticias set ?', contentAll, function(err, result, fields){
+            //console.log(content);
+            connection.release();
+            if(err) throw err;
+        })
+    })
+
+}
+
 
 const fatherUrl = 'https://www.gov.br/pt-br/noticias/ultimas-noticias'
 
@@ -50,7 +70,7 @@ function extractData(link) {
             let artileLead = $('div[class="documentDescription"]').text();
             let articleDate = $('span[class="value"]').text();
             let dataBlog = { articleTitle, artileLead, articleDate }
-            saveAll(dataBlog);
+            queryAll(dataBlog);
         })
 }
 
@@ -63,3 +83,8 @@ async function main() {
 }
 
 main()
+
+setTimeout(()=>{ 
+    pool.end();
+    console.log('Cadastros realizados com sucesso!');
+}, 25000);
