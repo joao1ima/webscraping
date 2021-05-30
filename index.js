@@ -1,6 +1,30 @@
 const axios = require('axios');
-const { load } = require('cheerio');
 const cheerio = require('cheerio');
+const mysql = require('mysql');
+const pool = mysql.createPool({
+    connectionLimit: 10,
+    host: 'localhost',
+    user:'root',
+    database: 'blog'
+
+});
+
+function saveAll(unitData){
+    let content = {
+        title: unitData.articleTitle,
+        lead: unitData.artileLead,
+        date: unitData.articleDate
+    }
+
+    pool.getConnection( function(err, connection){
+        if(err) throw err;
+        connection.query('INSERT INTO noticias set ?', content, function(err, result, fields){
+            console.log(content);
+            connection.release();
+            if(err) throw err;
+        })
+    })
+}
 
 const fatherUrl = 'https://www.gov.br/pt-br/noticias/ultimas-noticias'
 
@@ -25,7 +49,8 @@ function extractData(link) {
             let articleTitle = $('h1').text();
             let artileLead = $('div[class="documentDescription"]').text();
             let articleDate = $('span[class="value"]').text();
-            console.log({ articleTitle, artileLead, articleDate })
+            let dataBlog = { articleTitle, artileLead, articleDate }
+            saveAll(dataBlog);
         })
 }
 
