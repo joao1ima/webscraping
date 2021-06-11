@@ -19,6 +19,8 @@
   "dependencies": {
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.9",
+    "mogoose": "0.0.1-security",
+    "mongoose": "^5.12.12",
     "mysql": "^2.18.1"
   }
 }
